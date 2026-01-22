@@ -1,3 +1,3 @@
 # University-work
 
-This repository contains most of my work done during university studies
+This repository contains different projects made in University courses
