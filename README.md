@@ -1,3 +1,2 @@
-# University-work
+# Chess Built in Java
 
-This repository contains different projects made in University courses
