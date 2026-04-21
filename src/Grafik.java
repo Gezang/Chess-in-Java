@@ -44,10 +44,26 @@ public class Grafik extends JFrame implements ActionListener {
         setVisible(true);
 
         for (String piece : new String[] { "bB", "bK", "bN", "bP", "bQ", "bR", "wB", "wK", "wN", "wP", "wQ", "wR" }) {
-            ImageIcon icon = new ImageIcon("images/" + piece + ".png");
-            Image img = icon.getImage();
-            Image newimg = img.getScaledInstance(100, 100, java.awt.Image.SCALE_SMOOTH);
-            pieceIcons.put(piece, new ImageIcon(newimg));
+            try {
+                java.net.URL imgURL = getClass().getResource("images/" + piece + ".png");
+                if (imgURL == null) {
+                    java.io.File classDir = new java.io.File(
+                        getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
+                    if (classDir.isFile()) classDir = classDir.getParentFile();
+                    java.io.File imgFile = new java.io.File(classDir, "images/" + piece + ".png");
+                    if (!imgFile.exists())
+                        imgFile = new java.io.File(classDir.getParentFile(), "images/" + piece + ".png");
+                    if (imgFile.exists()) imgURL = imgFile.toURI().toURL();
+                }
+                if (imgURL != null) {
+                    ImageIcon icon = new ImageIcon(imgURL);
+                    Image img = icon.getImage();
+                    Image newimg = img.getScaledInstance(100, 100, java.awt.Image.SCALE_SMOOTH);
+                    pieceIcons.put(piece, new ImageIcon(newimg));
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
         game.startGame();
         updateboard();
@@ -67,23 +83,54 @@ public class Grafik extends JFrame implements ActionListener {
             updateboard();
             return;
         }
-
+        // Select piece
         Piece pieceAtSq = game.getPiece(position);
         // No selectable piece at square
         if (pieceAtSq == null || !pieceAtSq.getColor().equals(game.iswhite() ? "w" : "b")) {
             togglePossible(null);
+
+            String displayString = "Not a valid move. " + (game.iswhite() ? "White" : "Black") + "'s turn";
+            displayText.setText(displayString);
             return;
         }
         // Update selected piece
         game.choosepiece(position);
         ArrayList<Move> newPossible = game.getPossible();
 
-        if (true) { // (newPossible.size() > 1) Så jävla efterblivet att jag väntat med att
-                    // implementera detta
+        if (newPossible.size() == 1) {
+            Move move = newPossible.get(0);
+            game.makeMove(move);
+            game.updateStatus();
+            togglePossible(null);
+            updateboard();
+
+            knappar[move.getRow()][move.getCol()].makeSpecial();
+            int response = JOptionPane.showConfirmDialog(null,
+                    "Only one move available, it will be made automatically. Do you want to proceed?",
+                    "Automatic Move",
+                    JOptionPane.YES_NO_OPTION);
+
+            if (response == JOptionPane.YES_OPTION) {
+                knappar[move.getRow()][move.getCol()].makenormal();
+            } else if (response == JOptionPane.NO_OPTION) {
+                knappar[move.getRow()][move.getCol()].makenormal();
+                game.revertLastMove();
+                updateboard();
+            } else {
+                knappar[move.getRow()][move.getCol()].makenormal();
+                game.revertLastMove();
+                updateboard();
+            }
+            return;
+
+        }
+
+        if (true) {
             togglePossible(newPossible);
         } else {
             updateboard();
         }
+
     }
 
     public void updateboard() {
